@@ -1,0 +1,267 @@
+.nav-item {
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  color: #4b774e;
+  width: 100%;
+  text-align: left;
+}
+.nav-item.active {
+  background: #dd9f52;
+  color: white;
+}
+.nav-item:hover {
+  background: #fbf8f3;
+}
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05);
+}
+.stat-card span {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+/* Hamburger Menu */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+}
+
+.hamburger span {
+  width: 25px;
+  height: 3px;
+  background-color: #4b774e;
+  margin: 5px 0;
+  transition: 0.3s ease;
+  border-radius: 2px;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: rotate(-45deg) translate(-8px, 8px);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: rotate(45deg) translate(-8px, -8px);
+}
+
+/* Mobile Sidebar */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+}
+
+.mobile-nav.active {
+  display: block;
+}
+
+.mobile-nav-menu {
+  position: fixed;
+  left: -100%;
+  top: 0;
+  width: 64;
+  height: 100vh;
+  background-color: white;
+  padding: 1.5rem;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s ease;
+  z-index: 50;
+  overflow-y: auto;
+}
+
+.mobile-nav.active .mobile-nav-menu {
+  left: 0;
+  width: 256px;
+}
+
+.mobile-nav-menu nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  body {
+    flex-direction: column;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  aside {
+    display: none;
+  }
+
+  main {
+    flex: 1;
+    padding: 1rem;
+  }
+
+  header {
+    padding: 1rem;
+  }
+
+  #pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-card span {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .text-lg {
+    font-size: 1rem;
+  }
+
+  table {
+    font-size: 0.875rem;
+  }
+
+  button {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+
+  input,
+  select {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 0.75rem;
+  }
+
+  header {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #pageTitle {
+    font-size: 1.25rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  .stat-card {
+    padding: 0.75rem;
+  }
+
+  .stat-card span {
+    font-size: 1.25rem;
+  }
+
+  table {
+    font-size: 0.75rem;
+  }
+
+  thead th {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.25rem;
+  }
+
+  tbody td {
+    padding: 0.5rem 0.25rem;
+  }
+
+  button,
+  .text-sm {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+
+  .text-xl {
+    font-size: 1.125rem;
+  }
+
+  .text-lg {
+    font-size: 0.875rem;
+  }
+
+  .w-64 {
+    width: 100%;
+  }
+}
+
+@media (max-width: 320px) {
+  main {
+    padding: 0.5rem;
+  }
+
+  header {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  #pageTitle {
+    font-size: 1rem;
+  }
+
+  h2 {
+    font-size: 1rem;
+  }
+
+  .stat-card {
+    padding: 0.5rem;
+  }
+
+  .stat-card span {
+    font-size: 1rem;
+  }
+
+  button {
+    font-size: 0.65rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  table {
+    font-size: 0.65rem;
+  }
+
+  input,
+  select {
+    font-size: 0.75rem;
+    padding: 0.25rem;
+  }
+}
