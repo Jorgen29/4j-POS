@@ -5,6 +5,11 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', '4j-pos');
 
+// define('DB_HOST', 'localhost');
+// define('DB_USER', 'u721795739_4jsmartpos');
+// define('DB_PASS', '@Bossbabe085121');
+// define('DB_NAME', 'u721795739_4j_pos');
+
 class Database {
     private $host = DB_HOST;
     private $db_user = DB_USER;

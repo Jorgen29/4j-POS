@@ -77,24 +77,24 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
     </div>
 
     <!-- MAIN -->
-    <main class="flex-1 p-8">
+    <main class="flex-1 p-8 max-w-7xl mx-auto w-full">
       <!-- HEADER -->
       <header
-        class="bg-white rounded-xl shadow-sm px-6 py-4 mb-8 flex justify-between items-center"
+        class="bg-white rounded-xl shadow-sm px-4 sm:px-6 py-3 sm:py-4 mb-6 sm:mb-8 flex justify-between items-center flex-wrap gap-2 sm:gap-4"
       >
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 sm:gap-4">
           <button onclick="toggleMobileNav()" class="hamburger" id="hamburger">
             <span></span>
             <span></span>
             <span></span>
           </button>
-          <h1 id="pageTitle" class="text-2xl font-bold text-green">Dashboard</h1>
+          <h1 id="pageTitle" class="text-xl sm:text-2xl font-bold text-green">Dashboard</h1>
         </div>
 
         <div class="relative">
-          <button onclick="toggleUserMenu()" class="flex items-center gap-3">
+          <button onclick="toggleUserMenu()" class="flex items-center gap-2 sm:gap-3">
             <div
-              class="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-white font-bold"
+              class="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-gold flex items-center justify-center text-white font-bold text-sm sm:text-base"
             >
               <?php echo strtoupper(substr($_SESSION['email'], 0, 1)); ?>
             </div>
@@ -104,12 +104,12 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
             id="userMenu"
             class="hidden absolute right-0 mt-3 w-40 bg-white rounded-xl shadow-lg border z-50"
           >
-            <div class="px-4 py-3 text-sm text-gray-600 border-b">
+            <div class="px-4 py-3 text-xs sm:text-sm text-gray-600 border-b">
               <?php echo htmlspecialchars($_SESSION['email']); ?>
             </div>
             <a
               href="../../php/handlers/logoutHandler.php"
-              class="block px-4 py-3 text-sm text-redsoft hover:bg-redsoft/10"
+              class="block px-4 py-3 text-xs sm:text-sm text-redsoft hover:bg-redsoft/10"
               >Logout</a
             >
           </div>

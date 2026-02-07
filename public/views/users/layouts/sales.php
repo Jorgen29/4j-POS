@@ -38,40 +38,40 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
 }
 ?>
 
-<div class="flex gap-6 h-full">
+<div class="flex flex-col lg:flex-row gap-4 lg:gap-6 h-full">
     <!-- Products Grid -->
-    <div class="flex-1 overflow-y-auto pr-4">
-        <h2 class="text-2xl font-bold text-green mb-6">Point of Sale</h2>
+    <div class="flex-1 overflow-y-auto lg:pr-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-green mb-4 sm:mb-6">Point of Sale</h2>
         
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div class="product-grid grid grid-cols-2 gap-1 sm:gap-2 md:gap-3 md:grid-cols-3 lg:gap-4 lg:grid-cols-4">
             <?php if (!empty($storeProducts)): ?>
                 <?php foreach ($storeProducts as $product): ?>
                     <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition product-card" data-product-id="<?php echo $product['product_id']; ?>" data-product='<?php echo json_encode($product); ?>'>
                         <!-- Product Image Placeholder -->
-                        <div class="bg-gradient-to-br from-gold to-gold/50 h-32 flex items-center justify-center text-white">
-                            <span class="material-icons text-6xl opacity-30">shopping_bag</span>
+                        <div class="bg-gradient-to-br from-gold to-gold/50 h-20 sm:h-32 flex items-center justify-center text-white">
+                            <span class="material-icons text-4xl sm:text-6xl opacity-30">shopping_bag</span>
                         </div>
 
                         <!-- Product Info -->
-                        <div class="p-4">
-                            <h3 class="font-semibold text-gray-800 text-sm mb-2 line-clamp-2">
+                        <div class="p-2 sm:p-4">
+                            <h3 class="font-semibold text-gray-800 text-xs sm:text-sm mb-1 sm:mb-2 line-clamp-2">
                                 <?php echo htmlspecialchars($product['product_name']); ?>
                             </h3>
                             
-                            <p class="text-gold font-bold text-lg mb-2">
+                            <p class="text-gold font-bold text-sm sm:text-lg mb-1 sm:mb-2">
                                 ₱<?php echo number_format($product['price'], 2); ?>
                             </p>
 
-                            <p class="text-xs text-gray-500 mb-3">
+                            <p class="text-xs text-gray-500 mb-2 sm:mb-3">
                                 Stock: <span class="font-semibold"><?php echo $product['quantity']; ?></span>
                             </p>
 
                             <button 
                                 onclick="addToCart(<?php echo htmlspecialchars(json_encode($product)); ?>)" 
-                                class="w-full bg-green text-white py-2 rounded-lg hover:bg-green/90 transition font-semibold text-sm flex items-center justify-center gap-2"
+                                class="w-full bg-green text-white py-1.5 sm:py-2 rounded-lg hover:bg-green/90 transition font-semibold text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-2"
                                 <?php if ($product['quantity'] <= 0) echo 'disabled style="opacity: 0.5; cursor: not-allowed;"'; ?>
                             >
-                                <span class="material-icons text-base">add</span>
+                                <span class="material-icons text-sm sm:text-base">add</span>
                                 Add
                             </button>
                         </div>
@@ -84,39 +84,48 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
     </div>
 
     <!-- Checkout Sidebar -->
-    <div class="w-96 bg-white rounded-xl shadow-lg p-6 flex flex-col h-full overflow-hidden">
-        <h3 class="text-xl font-bold text-green mb-4">Checkout</h3>
+    <div class="w-full lg:w-96 bg-white rounded-xl shadow-lg p-4 sm:p-6 flex flex-col h-auto lg:h-full lg:overflow-hidden lg:min-h-screen">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg sm:text-xl font-bold text-green">Checkout</h3>
+            <button 
+                onclick="document.getElementById('barcodeScannerModalPOS').classList.remove('hidden'); setTimeout(() => document.getElementById('barcodeInputPOS').focus(), 100);"
+                class="bg-gold text-white p-2 rounded-lg hover:bg-gold/90 transition"
+                title="Scan Barcode"
+            >
+                <span class="material-icons text-lg sm:text-xl">qr_code_scanner</span>
+            </button>
+        </div>
 
         <!-- Cart Items -->
-        <div id="cartItems" class="flex-1 overflow-y-auto mb-4 bg-cream rounded-lg p-4">
-            <p id="emptyCart" class="text-center text-gray-500 py-6">No items added</p>
-            <div id="cartContent" class="hidden space-y-3"></div>
+        <div id="cartItems" class="flex-1 lg:flex-1 overflow-y-auto mb-3 sm:mb-4 bg-cream rounded-lg p-3 sm:p-4">
+            <p id="emptyCart" class="text-center text-gray-500 py-4 sm:py-6 text-sm sm:text-base">No items added</p>
+            <div id="cartContent" class="hidden space-y-2 sm:space-y-3"></div>
         </div>
 
         <!-- Subtotal -->
-        <div class="border-t pt-4 mb-4">
+        <div class="border-t pt-3 sm:pt-4 mb-3 sm:mb-4">
             <div class="flex justify-between mb-2">
-                <span class="text-gray-700">Subtotal:</span>
-                <span class="font-semibold text-gray-800">₱<span id="subtotal">0.00</span></span>
+                <span class="text-sm sm:text-base text-gray-700">Subtotal:</span>
+                <span class="font-semibold text-sm sm:text-base text-gray-800">₱<span id="subtotal">0.00</span></span>
             </div>
         </div>
 
         <!-- Total -->
-        <div class="bg-gold/10 border-2 border-gold rounded-lg p-4 mb-4">
+        <div class="bg-gold/10 border-2 border-gold rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
             <div class="flex justify-between items-center">
-                <span class="text-lg font-bold text-gray-800">Total:</span>
-                <span class="text-2xl font-bold text-gold">₱<span id="total">0.00</span></span>
+                <span class="text-base sm:text-lg font-bold text-gray-800">Total:</span>
+                <span class="text-xl sm:text-2xl font-bold text-gold">₱<span id="total">0.00</span></span>
             </div>
         </div>
 
         <!-- Customer Payment -->
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Customer Pays</label>
+        <div class="mb-3 sm:mb-4">
+            <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Customer Pays</label>
             <input 
                 type="number" 
                 id="customerPayment" 
                 placeholder="₱0.00" 
-                class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent text-lg font-semibold"
+                class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent text-base sm:text-lg font-semibold"
                 step="0.01"
                 min="0"
                 oninput="calculateChange()"
@@ -124,10 +133,10 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
         </div>
 
         <!-- Change -->
-        <div class="bg-green/10 border-2 border-green rounded-lg p-4 mb-4">
+        <div class="bg-green/10 border-2 border-green rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
             <div class="flex justify-between items-center">
-                <span class="text-lg font-bold text-gray-800">Change:</span>
-                <span class="text-2xl font-bold text-green">₱<span id="change">0.00</span></span>
+                <span class="text-base sm:text-lg font-bold text-gray-800">Change:</span>
+                <span class="text-xl sm:text-2xl font-bold text-green">₱<span id="change">0.00</span></span>
             </div>
         </div>
 
@@ -135,10 +144,10 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
         <button 
             onclick="processCheckout()" 
             id="checkoutBtn"
-            class="w-full bg-green text-white py-3 rounded-lg hover:bg-green/90 transition font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full bg-green text-white py-2 sm:py-3 rounded-lg hover:bg-green/90 transition font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             disabled
         >
-            <span class="material-icons">payment</span>
+            <span class="material-icons text-lg">payment</span>
             Checkout
         </button>
 
@@ -146,7 +155,7 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
         <button 
             onclick="clearCart()" 
             id="clearBtn"
-            class="w-full text-gray-700 py-2 rounded-lg hover:bg-gray-100 transition font-semibold mt-2 hidden"
+            class="w-full text-gray-700 py-2 rounded-lg hover:bg-gray-100 transition font-semibold mt-2 hidden text-sm sm:text-base"
         >
             Clear Cart
         </button>
@@ -329,7 +338,132 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
             showWarningModal('An error occurred while processing the transaction');
         });
     }
+
+    // Barcode Scanner Functions for POS
+    let barcodeStream = null;
+
+    function startBarcodeScanner() {
+        const video = document.getElementById('barcodeVideoPOS');
+        const loading = document.getElementById('barcodeLoadingPOS');
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                barcodeStream = stream;
+                video.style.display = 'block';
+                video.srcObject = stream;
+                loading.style.display = 'none';
+                initBarcodeScannerPOS();
+            })
+            .catch(err => {
+                showWarningModal('Camera access denied or unavailable');
+                console.error('Camera error:', err);
+            });
+    }
+
+    function stopBarcodeScanner() {
+        if (barcodeStream) {
+            barcodeStream.getTracks().forEach(track => track.stop());
+            barcodeStream = null;
+        }
+    }
+
+    function initBarcodeScannerPOS() {
+        const video = document.getElementById('barcodeVideoPOS');
+        const canvas = document.getElementById('barcodeCanvasPOS');
+        const ctx = canvas.getContext('2d');
+
+        // Focus on input for more reliable scanning
+        document.getElementById('barcodeInputPOS').focus();
+
+        function decode() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                try {
+                    if (window.Quagga) {
+                        // Use Quagga if available
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        // Quagga barcode detection would go here
+                    }
+                } catch (error) {
+                    // Continue scanning
+                }
+            }
+            if (barcodeStream) {
+                requestAnimationFrame(decode);
+            }
+        }
+        decode();
+    }
+
+    function handleBarcodeInputPOS() {
+        const input = document.getElementById('barcodeInputPOS');
+        const barcode = input.value.trim();
+
+        if (barcode) {
+            handleBarcodeScanned(barcode);
+            input.value = '';
+            input.focus();
+        }
+    }
+
+    function handleBarcodeScanned(barcode) {
+        const product = posProducts.find(p => p.barcode === barcode);
+
+        if (product) {
+            addToCart(product);
+            showWarningModal(`✓ Added: ${product.product_name}`);
+        } else {
+            showWarningModal(`Product not found for barcode: ${barcode}`);
+        }
+    }
 </script>
+
+<!-- Barcode Scanner Modal for POS -->
+<div id="barcodeScannerModalPOS" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-40">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full max-h-96 flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold text-green">Scan Barcode</h3>
+            <button 
+                onclick="document.getElementById('barcodeScannerModalPOS').classList.add('hidden'); stopBarcodeScanner();"
+                class="text-gray-500 hover:text-gray-700"
+            >
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <div id="barcodeVideoContainerPOS" class="flex-1 bg-black rounded-lg mb-4 flex items-center justify-center">
+            <video id="barcodeVideoPOS" class="w-full h-full object-cover rounded-lg" style="display:none;"></video>
+            <canvas id="barcodeCanvasPOS" class="hidden"></canvas>
+            <p id="barcodeLoadingPOS" class="text-white text-center">Loading camera...</p>
+        </div>
+        
+        <input 
+            type="text" 
+            id="barcodeInputPOS" 
+            placeholder="Or type barcode here..." 
+            class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold mb-4"
+            onkeypress="if(event.key==='Enter') handleBarcodeInputPOS();"
+        >
+        
+        <div class="flex gap-2">
+            <button 
+                onclick="startBarcodeScanner()"
+                class="flex-1 bg-gold text-white py-2 rounded-lg hover:bg-gold/90 transition font-semibold"
+            >
+                Start Scanner
+            </button>
+            <button 
+                onclick="document.getElementById('barcodeScannerModalPOS').classList.add('hidden'); stopBarcodeScanner();"
+                class="flex-1 bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition font-semibold"
+            >
+                Close
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Warning Modal -->
 <div id="warningModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">

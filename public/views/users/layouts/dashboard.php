@@ -100,119 +100,103 @@ if ($storeId) {
 }
 ?>
 
-<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-  <div class="stat-card">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-gray-600 text-sm mb-1">Store Name</p>
-        <span class="text-xl font-bold text-green"><?php echo htmlspecialchars($storeName); ?></span>
-      </div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+  <div class="stat-card text-center">
+    <div class="flex flex-col items-center justify-center">
+      <p class="text-gray-600 text-sm mb-2">Store Name</p>
+      <span class="text-lg sm:text-xl font-bold text-green"><?php echo htmlspecialchars($storeName); ?></span>
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-gray-600 text-sm mb-1">Subscription Status</p>
-        <span class="text-lg font-bold <?php echo $subscriptionStatus === 'Active' ? 'text-green' : 'text-redsoft'; ?>">
-          <?php echo $subscriptionStatus; ?>
-        </span>
-        <p class="text-xs text-gray-500 mt-1"><?php echo htmlspecialchars($subscriptionName); ?></p>
-      </div>
+  <div class="stat-card text-center">
+    <div class="flex flex-col items-center justify-center">
+      <p class="text-gray-600 text-sm mb-2">Subscription Status</p>
+      <span class="text-base sm:text-lg font-bold <?php echo $subscriptionStatus === 'Active' ? 'text-green' : 'text-redsoft'; ?>">
+        <?php echo $subscriptionStatus; ?>
+      </span>
+      <p class="text-xs text-gray-500 mt-2"><?php echo htmlspecialchars($subscriptionName); ?></p>
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-gray-600 text-sm mb-1">Renewal Date</p>
-        <span class="text-xl font-bold text-gold"><?php echo $renewalDate; ?></span>
-      </div>
+  <div class="stat-card text-center">
+    <div class="flex flex-col items-center justify-center">
+      <p class="text-gray-600 text-sm mb-2">Renewal Date</p>
+      <span class="text-lg sm:text-xl font-bold text-gold"><?php echo $renewalDate; ?></span>
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-gray-600 text-sm mb-1">Total Products</p>
-        <span class="text-xl font-bold text-green"><?php echo $productCount; ?></span>
-      </div>
+  <div class="stat-card text-center">
+    <div class="flex flex-col items-center justify-center">
+      <p class="text-gray-600 text-sm mb-2">Total Products</p>
+      <span class="text-lg sm:text-xl font-bold text-green"><?php echo $productCount; ?></span>
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-gray-600 text-sm mb-1">Total Inventory</p>
-        <span class="text-xl font-bold text-gold">₱<?php echo number_format($totalInventoryValue, 2); ?></span>
-      </div>
+  <div class="stat-card text-center">
+    <div class="flex flex-col items-center justify-center">
+      <p class="text-gray-600 text-sm mb-2">Total Inventory</p>
+      <span class="text-lg sm:text-xl font-bold text-gold">₱<?php echo number_format($totalInventoryValue, 2); ?></span>
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-gray-600 text-sm mb-1">Total Quantity</p>
-        <span class="text-xl font-bold text-green"><?php echo $totalQuantity; ?></span>
-      </div>
+  <div class="stat-card text-center">
+    <div class="flex flex-col items-center justify-center">
+      <p class="text-gray-600 text-sm mb-2">Total Quantity</p>
+      <span class="text-lg sm:text-xl font-bold text-green"><?php echo $totalQuantity; ?></span>
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-gray-600 text-sm mb-1">Today's Sales</p>
-        <span class="text-xl font-bold text-gold">₱<?php echo number_format($todaySales, 2); ?></span>
-      </div>
+  <div class="stat-card text-center">
+    <div class="flex flex-col items-center justify-center">
+      <p class="text-gray-600 text-sm mb-2">Today's Sales</p>
+      <span class="text-lg sm:text-xl font-bold text-gold">₱<?php echo number_format($todaySales, 2); ?></span>
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-gray-600 text-sm mb-1">Total Sales</p>
-        <span class="text-xl font-bold text-green">₱<?php echo number_format($totalSales, 2); ?></span>
-      </div>
+  <div class="stat-card text-center">
+    <div class="flex flex-col items-center justify-center">
+      <p class="text-gray-600 text-sm mb-2">Total Sales</p>
+      <span class="text-lg sm:text-xl font-bold text-green">₱<?php echo number_format($totalSales, 2); ?></span>
     </div>
   </div>
 </div>
 
 <!-- Additional Info Section -->
-<div class="mt-8 grid grid-cols-2 gap-6">
-  <div class="bg-white rounded-xl shadow p-6">
-    <h3 class="text-lg font-semibold text-green mb-4">Account Information</h3>
+<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+  <div class="bg-white rounded-xl shadow p-4 sm:p-6">
+    <h3 class="text-base sm:text-lg font-semibold text-green mb-4 text-center">Account Information</h3>
     <div class="space-y-3">
-      <div class="flex justify-between">
-        <span class="text-gray-600">Email:</span>
-        <span class="font-medium"><?php echo htmlspecialchars($_SESSION['email'] ?? 'N/A'); ?></span>
+      <div class="flex flex-col sm:flex-row sm:justify-between">
+        <span class="text-gray-600 text-sm sm:text-base">Email:</span>
+        <span class="font-medium text-sm sm:text-base"><?php echo htmlspecialchars($_SESSION['email'] ?? 'N/A'); ?></span>
       </div>
-      <div class="flex justify-between">
-        <span class="text-gray-600">User ID:</span>
-        <span class="font-medium">U-<?php echo str_pad($_SESSION['user_id'] ?? 0, 3, '0', STR_PAD_LEFT); ?></span>
+      <div class="flex flex-col sm:flex-row sm:justify-between">
+        <span class="text-gray-600 text-sm sm:text-base">User ID:</span>
+        <span class="font-medium text-sm sm:text-base">U-<?php echo str_pad($_SESSION['user_id'] ?? 0, 3, '0', STR_PAD_LEFT); ?></span>
       </div>
-      <div class="flex justify-between">
-        <span class="text-gray-600">Store ID:</span>
-        <span class="font-medium"><?php echo $storeId ? 'S-' . str_pad($storeId, 3, '0', STR_PAD_LEFT) : 'N/A'; ?></span>
+      <div class="flex flex-col sm:flex-row sm:justify-between">
+        <span class="text-gray-600 text-sm sm:text-base">Store ID:</span>
+        <span class="font-medium text-sm sm:text-base"><?php echo $storeId ? 'S-' . str_pad($storeId, 3, '0', STR_PAD_LEFT) : 'N/A'; ?></span>
       </div>
     </div>
   </div>
 
-  <div class="bg-white rounded-xl shadow p-6">
-    <h3 class="text-lg font-semibold text-green mb-4">Subscription Details</h3>
+  <div class="bg-white rounded-xl shadow p-4 sm:p-6">
+    <h3 class="text-base sm:text-lg font-semibold text-green mb-4 text-center">Subscription Details</h3>
     <div class="space-y-3">
-      <div class="flex justify-between">
-        <span class="text-gray-600">Plan:</span>
-        <span class="font-medium"><?php echo htmlspecialchars($subscriptionName); ?></span>
+      <div class="flex flex-col sm:flex-row sm:justify-between">
+        <span class="text-gray-600 text-sm sm:text-base">Plan:</span>
+        <span class="font-medium text-sm sm:text-base"><?php echo htmlspecialchars($subscriptionName); ?></span>
       </div>
-      <div class="flex justify-between">
-        <span class="text-gray-600">Status:</span>
-        <span class="font-medium px-2 py-1 rounded text-xs <?php echo $subscriptionStatus === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
+      <div class="flex flex-col sm:flex-row sm:justify-between">
+        <span class="text-gray-600 text-sm sm:text-base">Status:</span>
+        <span class="font-medium px-2 py-1 rounded text-xs inline-block <?php echo $subscriptionStatus === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
           <?php echo $subscriptionStatus; ?>
         </span>
       </div>
-      <div class="flex justify-between">
-        <span class="text-gray-600">Next Renewal:</span>
-        <span class="font-medium"><?php echo $renewalDate; ?></span>
+      <div class="flex flex-col sm:flex-row sm:justify-between">
+        <span class="text-gray-600 text-sm sm:text-base">Next Renewal:</span>
+        <span class="font-medium text-sm sm:text-base"><?php echo $renewalDate; ?></span>
       </div>
     </div>
   </div>
