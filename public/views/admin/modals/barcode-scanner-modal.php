@@ -2,7 +2,7 @@
 // Barcode Scanner Modal
 ?>
 <div id="barcodeScannerModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50" style="transition: none;">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 flex flex-col h-4/5 max-h-96" style="transition: none;">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 flex flex-col max-h-[90vh]" style="transition: none;">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-bold text-gray-800">Barcode Scanner</h2>
             <button type="button" class="text-gray-600 hover:text-gray-800 text-2xl" onclick="closeBarcodeScanner()" style="background: none; border: none; cursor: pointer;">
@@ -10,8 +10,8 @@
             </button>
         </div>
 
-        <div id="scanner-container" class="flex-1 flex flex-col items-center justify-center bg-gray-100 rounded-lg mb-4 overflow-hidden">
-            <video id="scanner-video" style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+        <div id="scanner-container" class="flex-1 flex flex-col items-center justify-center bg-gray-100 rounded-lg mb-4 overflow-hidden" style="min-height: 320px;">
+            <video id="scanner-video" style="width: 100%; height: 100%; object-fit: cover;" autoplay playsinline muted></video>
             <canvas id="scanner-canvas" style="display: none;"></canvas>
             <img id="upload-preview" style="display: none; max-width: 100%; max-height: 100%; object-fit: contain;">
             <div id="scanner-placeholder" class="flex flex-col items-center justify-center h-full">

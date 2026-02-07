@@ -1346,6 +1346,7 @@ function openBarcodeScanner() {
   const resultDiv = document.getElementById("scanner-result");
   const detectedBarcodeElement = document.getElementById("detected-barcode");
   const useBarcodeBtn = document.getElementById("use-barcode-btn");
+  const placeholder = document.getElementById("scanner-placeholder");
 
   // Show modal
   scannerModal.classList.remove("hidden");
@@ -1378,17 +1379,37 @@ function openBarcodeScanner() {
     .getUserMedia({ video: { facingMode: "environment" } })
     .then(function (stream) {
       console.log("[Barcode Scanner] Camera access granted");
+
+      const video = document.getElementById("scanner-video");
       video.srcObject = stream;
       video.style.display = "block";
-      document.getElementById("scanner-placeholder").style.display = "none";
+
+      // Play the video
+      video
+        .play()
+        .then(() => {
+          console.log("[Barcode Scanner] Video playing");
+        })
+        .catch((err) => {
+          console.error("[Barcode Scanner] Video play error:", err);
+        });
+
+      placeholder.style.display = "none";
 
       // Initialize Quagga after video is ready
       setTimeout(() => {
         try {
+          // Stop any existing Quagga instance first
+          try {
+            Quagga.stop();
+          } catch (e) {
+            console.log("[Barcode Scanner] No previous instance to stop");
+          }
+
           Quagga.init(
             {
               inputStream: {
-                type: "VideoStream",
+                type: "LiveStream",
                 target: video,
                 constraints: {
                   facingMode: "environment",
@@ -1409,6 +1430,8 @@ function openBarcodeScanner() {
                 ],
                 debug: {
                   showPatternInResult: false,
+                  showCanvasPath: false,
+                  showCanvas: false,
                 },
               },
             },
@@ -1445,7 +1468,7 @@ function openBarcodeScanner() {
           errorDiv.classList.remove("hidden");
           barcodeScanning = false;
         }
-      }, 300);
+      }, 500);
     })
     .catch(function (err) {
       console.error("[Barcode Scanner] Camera access error:", err);
@@ -1978,9 +2001,7 @@ function confirmDeleteProduct() {
           "Product Deleted";
         document.getElementById("successMessage").textContent =
           "Product has been deleted successfully";
-        document
-          .getElementById("successDetails")
-          .classList.add("hidden");
+        document.getElementById("successDetails").classList.add("hidden");
 
         // Set flag to reload page when modal is closed
         shouldReloadPage = true;

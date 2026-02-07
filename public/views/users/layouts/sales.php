@@ -188,16 +188,18 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
         const existingItem = cartPOS.find(item => item.product_id == product.product_id);
 
         if (existingItem) {
-            // Check if adding more would exceed stock
+            // Item already in cart - add only 1 more
             if (existingItem.quantity >= existingItem.stock_quantity) {
                 showWarningModal(`Cannot add more. Stock available: ${existingItem.stock_quantity}`);
                 return;
             }
             existingItem.quantity += 1;
+            console.log(`Item quantity increased to ${existingItem.quantity}`);
         } else {
-            // Preserve stock quantity separately
+            // New item to cart
             const cartItem = { ...product, stock_quantity: product.quantity, quantity: 1 };
             cartPOS.push(cartItem);
+            console.log(`Item added to cart with quantity 1`);
         }
 
         updateCartDisplay();
@@ -342,12 +344,19 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
     // Barcode Scanner Functions for POS
     let barcodeStream = null;
     let quaggaInitialized = false;
+    let lastDetectedBarcode = null;
+    let lastDetectionTime = 0;
+    let isProcessingBarcode = false; // Prevent simultaneous detections
+    const BARCODE_DEBOUNCE_MS = 500; // Prevent same barcode detection within 500ms
 
     function startBarcodeScanner() {
         const video = document.getElementById('barcodeVideoPOS');
         const loading = document.getElementById('barcodeLoadingPOS');
         const barcodeInput = document.getElementById('barcodeInputPOS');
 
+        // Reset processing flag for new scan session
+        isProcessingBarcode = false;
+        
         // Focus on input for scanning
         barcodeInput.focus();
         
@@ -394,6 +403,12 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
         }
         
         quaggaInitialized = false;
+        
+        // Reset barcode detection tracking
+        lastDetectedBarcode = null;
+        lastDetectionTime = 0;
+        isProcessingBarcode = false;
+        
         const video = document.getElementById('barcodeVideoPOS');
         const loading = document.getElementById('barcodeLoadingPOS');
         video.style.display = 'none';
@@ -454,12 +469,43 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
 
             // Handle detected barcode
             Quagga.onDetected(function (data) {
+                // Prevent multiple simultaneous detections
+                if (isProcessingBarcode) {
+                    console.log('Already processing a barcode, ignoring duplicate detection');
+                    return;
+                }
+                
                 if (data && data.codeResult) {
                     const barcode = data.codeResult.code;
+                    
+                    // Set flag immediately to prevent other detections
+                    isProcessingBarcode = true;
+                    
                     console.log('Barcode detected:', barcode);
-                    handleBarcodeScanned(barcode);
+                    lastDetectedBarcode = barcode;
+                    lastDetectionTime = Date.now();
+                    
+                    // Stop scanner and stream to force fresh initialization on next scan
+                    if (barcodeStream) {
+                        barcodeStream.getTracks().forEach(track => track.stop());
+                        barcodeStream = null;
+                    }
                     Quagga.stop();
-                    stopBarcodeScanner();
+                    quaggaInitialized = false;
+                    
+                    const video = document.getElementById('barcodeVideoPOS');
+                    video.srcObject = null;
+                    video.style.display = 'none';
+                    
+                    // Process the barcode and keep flag set for full debounce window
+                    handleBarcodeScanned(barcode);
+                    
+                    // Reset flag after debounce window expires
+                    // Scanner will stay stopped, user can click "Start Scanner" to scan again
+                    setTimeout(() => {
+                        isProcessingBarcode = false;
+                        console.log('Debounce window expired, ready for next scan. Click Start Scanner to continue.');
+                    }, BARCODE_DEBOUNCE_MS);
                 }
             });
         });
