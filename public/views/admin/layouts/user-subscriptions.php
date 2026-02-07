@@ -91,12 +91,16 @@ $users = $userActions->getAllUsers();
                             $addButtonDisabled = ($userSubscription && $userSubscription['status'] == 1) ? "opacity-50 cursor-not-allowed" : "";
                             $addButtonAttr = ($userSubscription && $userSubscription['status'] == 1) ? "disabled" : "";
                             $showResetButton = ($userSubscription && $userSubscription['status'] == 1) ? true : false;
+                            $showRenewButton = ($userSubscription && $userSubscription['status'] == 1) ? true : false;
                             echo "
                                     <div class='flex gap-2 justify-center'>";
-                            echo "
+                            if ($showRenewButton) {
+                                echo "
                                         <button onclick=\"renewUserSubscription($userId, '$email')\" class='bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs' style='background-color: #10b981 !important;' title='Renew'>
                                             Renew
-                                        </button>
+                                        </button>";
+                            }
+                            echo "
                                         <button onclick=\"addUserSubscription($userId, '$email')\" class='bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs $addButtonDisabled' $addButtonAttr title='Add'>
                                             Add
                                         </button>";

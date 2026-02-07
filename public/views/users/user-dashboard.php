@@ -6,12 +6,18 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: ../../../index.php');
     exit;
 }
+
+// Ensure only non-admin users can access
+if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
+    header('Location: ../admin/admin-dashboard.php');
+    exit;
+}
 ?>
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Smart POS – Super Admin</title>
+    <title>Smart POS – User Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,11 +37,11 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         },
       };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
   </head>
 
   <body class="bg-cream min-h-screen flex">
-     <script src="../../js/admin-dashboard.js"></script>
+    <script src="../../js/admin-dashboard.js"></script>
+    
     <!-- SIDEBAR -->
     <aside class="w-64 bg-white shadow-lg p-6">
       <h2 class="text-2xl font-bold text-green mb-8">Smart POS</h2>
@@ -43,20 +49,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         <button onclick="showPage('dashboard', this)" class="nav-item active">
           Dashboard
         </button>
-        <button onclick="showPage('users', this)" class="nav-item">
-          Users
-        </button>
-        <button onclick="showPage('subscriptions', this)" class="nav-item">
-          Subscriptions
-        </button>
-        <button onclick="showPage('user-subscriptions', this)" class="nav-item">
-          User Subscriptions
-        </button>
         <button onclick="showPage('products', this)" class="nav-item">
           Products
-        </button>
-        <button onclick="showPage('sales', this)" class="nav-item">
-          Sales
         </button>
       </nav>
     </aside>
@@ -69,20 +63,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
           <button onclick="showPage('dashboard', this); toggleMobileNav()" class="nav-item active w-full">
             Dashboard
           </button>
-          <button onclick="showPage('users', this); toggleMobileNav()" class="nav-item w-full">
-            Users
-          </button>
-          <button onclick="showPage('subscriptions', this); toggleMobileNav()" class="nav-item w-full">
-            Subscriptions
-          </button>
-          <button onclick="showPage('user-subscriptions', this); toggleMobileNav()" class="nav-item w-full">
-            User Subscriptions
-          </button>
           <button onclick="showPage('products', this); toggleMobileNav()" class="nav-item w-full">
             Products
-          </button>
-          <button onclick="showPage('sales', this); toggleMobileNav()" class="nav-item w-full">
-            Sales
           </button>
         </nav>
       </div>
@@ -119,9 +101,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <div class="px-4 py-3 text-sm text-gray-600 border-b">
               <?php echo htmlspecialchars($_SESSION['email']); ?>
             </div>
-            <button onclick="showPage('profile', event.currentTarget.closest('#userMenu')); toggleUserMenu()" class="w-full text-left block px-4 py-3 text-sm hover:bg-cream border-none bg-transparent cursor-pointer"
-              >Profile</button
-            >
             <a
               href="../../php/handlers/logoutHandler.php"
               class="block px-4 py-3 text-sm text-redsoft hover:bg-redsoft/10"
@@ -136,54 +115,41 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         <?php include './layouts/dashboard.php'; ?>
       </div>
 
-      <!-- USERS -->
-      <div id="users" class="page hidden">
-        <?php include './layouts/users.php'; ?>
-      </div>
-
-      <!-- SUBSCRIPTIONS -->
-      <div id="subscriptions" class="page hidden">
-        <?php include './layouts/subscriptions.php'; ?>
-      </div>
-
-      <!-- USER SUBSCRIPTIONS -->
-      <div id="user-subscriptions" class="page hidden">
-        <?php include './layouts/user-subscriptions.php'; ?>
-      </div>
-
       <!-- PRODUCTS -->
       <div id="products" class="page hidden">
         <?php include './layouts/products.php'; ?>
       </div>
-
-      <!-- SALES -->
-      <div id="sales" class="page hidden">
-        <?php include './layouts/sales.php'; ?>
-      </div>
-
-      <!-- PROFILE -->
-      <div id="profile" class="page hidden">
-        <?php include './layouts/profile.php'; ?>
-      </div>
     </main>
 
     <!-- MODALS -->
-    <?php include './modals/user-modal.php'; ?>
-    <?php include './modals/confirm-user-modal.php'; ?>
     <?php include './modals/success-modal.php'; ?>
-    <?php include './modals/edit-user-modal.php'; ?>
-    <?php include './modals/delete-user-modal.php'; ?>
-    <?php include './modals/subscription-modal.php'; ?>
-    <?php include './modals/edit-subscription-modal.php'; ?>
-    <?php include './modals/delete-subscription-modal.php'; ?>
-    <?php include './modals/renew-subscription-modal.php'; ?>
-    <?php include './modals/assign-subscription-modal.php'; ?>
-    <?php include './modals/reset-subscription-confirm-modal.php'; ?>
     <?php include './modals/product-modal.php'; ?>
     <?php include './modals/edit-product-modal.php'; ?>
     <?php include './modals/delete-product-modal.php'; ?>
     <?php include './modals/barcode-scanner-modal.php'; ?>
 
+    <script>
+      function showPage(id, el) {
+        document.querySelectorAll(".page").forEach((p) => p.classList.add("hidden"));
+        document.getElementById(id).classList.remove("hidden");
+        document
+          .querySelectorAll(".nav-item")
+          .forEach((i) => i.classList.remove("active"));
+        el.classList.add("active");
+        document.getElementById("pageTitle").innerText =
+          id.charAt(0).toUpperCase() + id.slice(1);
+      }
 
+      function toggleUserMenu() {
+        document.getElementById("userMenu").classList.toggle("hidden");
+      }
+
+      function toggleMobileNav() {
+        const mobileNav = document.getElementById("mobileNav");
+        const hamburger = document.getElementById("hamburger");
+        mobileNav.classList.toggle("active");
+        hamburger.classList.toggle("active");
+      }
+    </script>
   </body>
 </html>

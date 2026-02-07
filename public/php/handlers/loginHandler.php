@@ -46,8 +46,14 @@ try {
         $roleName = ($user['role'] == 0) ? 'Admin' : 'User';
         $_SESSION['role_name'] = $roleName;
 
-        // Redirect to dashboard
-        header('Location: ../../views/admin/admin-dashboard.php');
+        // Redirect based on user role
+        if ($user['role'] == 0) {
+            // Admin user
+            header('Location: ../../views/admin/admin-dashboard.php');
+        } else {
+            // Regular user
+            header('Location: ../../views/users/user-dashboard.php');
+        }
         exit;
     } else {
         // Invalid credentials

@@ -1,3 +1,10 @@
+// Global variables
+let shouldReloadPage = false;
+let barcodeScannerSource = "add";
+let barcodeScanning = false;
+let detectedBarcodeValue = null;
+let allProducts = [];
+
 function showPage(id, el) {
   document.querySelectorAll(".page").forEach((p) => p.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
@@ -15,6 +22,19 @@ function toggleUserMenu() {
 
 function toggleModal(id) {
   document.getElementById(id).classList.toggle("hidden");
+
+  // If success modal is closed and we need to reload, do it now
+  if (
+    id === "successModal" &&
+    document.getElementById("successModal").classList.contains("hidden") &&
+    shouldReloadPage
+  ) {
+    console.log("[Page] Reloading after modal close");
+    shouldReloadPage = false; // Reset flag
+    setTimeout(() => {
+      location.reload();
+    }, 500);
+  }
 }
 
 function toggleMobileNav() {
@@ -1179,5 +1199,816 @@ document.addEventListener("click", (e) => {
   ) {
     mobileNav.classList.remove("active");
     hamburger.classList.remove("active");
+  }
+});
+
+// ============================================
+// PRODUCT MANAGEMENT FUNCTIONS
+// ============================================
+
+function openProductModal() {
+  console.log("[Product Debug] Opening product modal");
+
+  // Clear form
+  document.getElementById("productForm").reset();
+  document.getElementById("productError").classList.add("hidden");
+
+  // Fetch stores for dropdown
+  fetch("../../php/handlers/getAllStoresHandler.php")
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("[Product Debug] Stores fetched:", data);
+      if (data.status === "success") {
+        const storeSelect = document.getElementById("productStore");
+        storeSelect.innerHTML = '<option value="">-- Select Store --</option>';
+
+        data.data.forEach((store) => {
+          const option = document.createElement("option");
+          option.value = store.store_id;
+          option.textContent = store.store_name;
+          storeSelect.appendChild(option);
+        });
+      }
+    })
+    .catch((error) => {
+      console.error("[Product Debug] Error fetching stores:", error);
+    });
+
+  toggleModal("productModal");
+}
+
+function submitAddProduct() {
+  const barcode = document.getElementById("productBarcode").value;
+  const productName = document.getElementById("productName").value;
+  const price = document.getElementById("productPrice").value;
+  const quantity = document.getElementById("productQuantity").value;
+  const storeId = document.getElementById("productStore").value;
+  const errorDiv = document.getElementById("productError");
+  const errorText = document.getElementById("productErrorText");
+
+  // Clear previous errors
+  if (errorDiv) {
+    errorDiv.classList.add("hidden");
+  }
+
+  // Validate - SKU is now auto-generated, so don't require it
+  if (!barcode || !productName || !price || !quantity || !storeId) {
+    if (errorDiv && errorText) {
+      errorText.textContent = "Please fill in all required fields";
+      errorDiv.classList.remove("hidden");
+    }
+    return;
+  }
+
+  console.log("[Product Debug] Creating product:", {
+    barcode,
+    productName,
+    price,
+    quantity,
+    storeId,
+  });
+
+  const formData = new FormData();
+  formData.append("barcode", barcode);
+  // SKU is no longer sent - it will be generated on backend
+  formData.append("product_name", productName);
+  formData.append("price", price);
+  formData.append("quantity", quantity);
+  formData.append("store_id", storeId);
+
+  fetch("../../php/handlers/createProductHandler.php", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("[Product Debug] Create response:", data);
+      if (data.status === "success") {
+        // Show success modal
+        document.getElementById("successHeader").textContent = "Product Added";
+        document.getElementById("successMessage").textContent =
+          `Product "${productName}" created successfully`;
+        document.getElementById("successEmail").textContent = data.data.barcode;
+        document.getElementById("successRole").textContent =
+          "Qty: " + quantity + " - ₱" + parseFloat(price).toLocaleString();
+        // Show the auto-generated SKU
+        document.getElementById("successUserId").textContent =
+          "SKU: " + data.data.sku;
+        document
+          .getElementById("successStoreContainer")
+          .classList.add("hidden");
+
+        window.isEditOperation = true;
+
+        toggleModal("productModal");
+        toggleModal("successModal");
+
+        // Reload page after modal closes
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      } else {
+        if (errorDiv && errorText) {
+          errorText.textContent = "Error: " + data.message;
+          errorDiv.classList.remove("hidden");
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("[Product Debug] Error:", error);
+      if (errorDiv && errorText) {
+        errorText.textContent = "An error occurred: " + error.message;
+        errorDiv.classList.remove("hidden");
+      }
+    });
+}
+
+// ========================
+// Barcode Scanner Functions
+// ========================
+
+function openBarcodeScanner() {
+  console.log("[Barcode Scanner] Opening scanner modal");
+
+  // Determine which modal is open
+  const addProductModal = document.getElementById("productModal");
+  const editProductModal = document.getElementById("editProductModal");
+
+  if (!addProductModal.classList.contains("hidden")) {
+    barcodeScannerSource = "add";
+  } else if (!editProductModal.classList.contains("hidden")) {
+    barcodeScannerSource = "edit";
+  }
+
+  const scannerModal = document.getElementById("barcodeScannerModal");
+  const errorDiv = document.getElementById("scanner-error");
+  const errorText = document.getElementById("scanner-error-text");
+  const resultDiv = document.getElementById("scanner-result");
+  const detectedBarcodeElement = document.getElementById("detected-barcode");
+  const useBarcodeBtn = document.getElementById("use-barcode-btn");
+
+  // Show modal
+  scannerModal.classList.remove("hidden");
+
+  // Hide previous results
+  resultDiv.classList.add("hidden");
+  errorDiv.classList.add("hidden");
+  useBarcodeBtn.classList.add("hidden");
+  barcodeScanning = true;
+  detectedBarcodeValue = null;
+
+  const video = document.getElementById("scanner-video");
+
+  // Check if site is secure (HTTPS or localhost)
+  const isSecureContext =
+    window.isSecureContext ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+
+  if (!isSecureContext) {
+    errorText.textContent =
+      "⚠️ Camera requires HTTPS or localhost. Please access via https:// or use localhost. You can still enter barcode manually.";
+    errorDiv.classList.remove("hidden");
+    barcodeScanning = false;
+    return;
+  }
+
+  // Request camera access
+  navigator.mediaDevices
+    .getUserMedia({ video: { facingMode: "environment" } })
+    .then(function (stream) {
+      console.log("[Barcode Scanner] Camera access granted");
+      video.srcObject = stream;
+      video.style.display = "block";
+      document.getElementById("scanner-placeholder").style.display = "none";
+
+      // Initialize Quagga after video is ready
+      setTimeout(() => {
+        try {
+          Quagga.init(
+            {
+              inputStream: {
+                type: "VideoStream",
+                target: video,
+                constraints: {
+                  facingMode: "environment",
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                },
+              },
+              decoder: {
+                readers: [
+                  "code_128_reader",
+                  "ean_reader",
+                  "ean_8_reader",
+                  "upc_reader",
+                  "upc_e_reader",
+                  "code_39_reader",
+                  "code_93_reader",
+                  "codabar_reader",
+                ],
+                debug: {
+                  showPatternInResult: false,
+                },
+              },
+            },
+            function (err) {
+              if (err) {
+                console.error("[Barcode Scanner] Quagga init error:", err);
+                errorText.textContent =
+                  "Scanner initialization error: " + err.message;
+                errorDiv.classList.remove("hidden");
+                return;
+              }
+              console.log("[Barcode Scanner] Quagga initialized successfully");
+              Quagga.start();
+
+              Quagga.onDetected(function (result) {
+                if (result && result.codeResult && result.codeResult.code) {
+                  const barcode = result.codeResult.code;
+                  console.log("[Barcode Scanner] Detected barcode:", barcode);
+
+                  detectedBarcodeValue = barcode;
+                  detectedBarcodeElement.textContent = barcode;
+                  resultDiv.classList.remove("hidden");
+                  useBarcodeBtn.classList.remove("hidden");
+
+                  Quagga.stop();
+                  barcodeScanning = false;
+                }
+              });
+            },
+          );
+        } catch (error) {
+          console.error("[Barcode Scanner] Error initializing Quagga:", error);
+          errorText.textContent = "Error: " + error.message;
+          errorDiv.classList.remove("hidden");
+          barcodeScanning = false;
+        }
+      }, 300);
+    })
+    .catch(function (err) {
+      console.error("[Barcode Scanner] Camera access error:", err);
+      let errorMessage = "Camera access denied";
+
+      if (err.name === "NotAllowedError") {
+        errorMessage = "Camera permission denied. Please allow camera access.";
+      } else if (
+        err.name === "NotFoundError" ||
+        err.name === "NotSupportedError"
+      ) {
+        errorMessage = "No camera found or not supported.";
+      } else if (err.name === "NotSecureError") {
+        errorMessage =
+          "⚠️ HTTPS required for camera access. Use https:// or localhost.";
+      }
+
+      errorText.textContent = errorMessage;
+      errorDiv.classList.remove("hidden");
+      barcodeScanning = false;
+    });
+}
+
+function closeBarcodeScanner() {
+  console.log("[Barcode Scanner] Closing scanner");
+
+  const scannerModal = document.getElementById("barcodeScannerModal");
+  const scannerVideo = document.getElementById("scanner-video");
+  const scannerPlaceholder = document.getElementById("scanner-placeholder");
+
+  // Stop Quagga
+  if (barcodeScanning) {
+    try {
+      Quagga.stop();
+      Quagga.offDetected();
+      Quagga.offProcessed();
+    } catch (e) {
+      console.log(
+        "[Barcode Scanner] Quagga already stopped or not initialized",
+      );
+    }
+  }
+
+  // Stop video stream
+  if (scannerVideo.srcObject) {
+    const tracks = scannerVideo.srcObject.getTracks();
+    tracks.forEach((track) => track.stop());
+    scannerVideo.srcObject = null;
+  }
+
+  // Hide modal
+  scannerModal.classList.add("hidden");
+
+  // Reset video
+  scannerVideo.style.display = "none";
+  scannerPlaceholder.style.display = "flex";
+
+  barcodeScanning = false;
+  detectedBarcodeValue = null;
+}
+
+function useDetectedBarcode() {
+  if (detectedBarcodeValue) {
+    console.log(
+      "[Barcode Scanner] Using detected barcode:",
+      detectedBarcodeValue,
+      "Source:",
+      barcodeScannerSource,
+    );
+
+    // Populate barcode field based on which modal is open
+    if (barcodeScannerSource === "edit") {
+      document.getElementById("editProductBarcode").value =
+        detectedBarcodeValue;
+    } else {
+      document.getElementById("productBarcode").value = detectedBarcodeValue;
+    }
+
+    // Close scanner modal
+    closeBarcodeScanner();
+
+    console.log(
+      "[Barcode Scanner] Barcode populated in",
+      barcodeScannerSource,
+      "form",
+    );
+  }
+}
+
+// ========================
+// Barcode Image Upload Handler
+// ========================
+function handleBarcodeImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  console.log("[Barcode Upload] Processing image:", file.name);
+
+  const reader = new FileReader();
+  const errorDiv = document.getElementById("scanner-error");
+  const errorText = document.getElementById("scanner-error-text");
+  const resultDiv = document.getElementById("scanner-result");
+  const detectedBarcodeElement = document.getElementById("detected-barcode");
+  const useBarcodeBtn = document.getElementById("use-barcode-btn");
+
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = function () {
+      console.log("[Barcode Upload] Image loaded, scanning...");
+
+      // Show image preview
+      const uploadPreview = document.getElementById("upload-preview");
+      uploadPreview.src = e.target.result;
+      uploadPreview.style.display = "block";
+      document.getElementById("scanner-placeholder").style.display = "none";
+
+      // Create canvas from image
+      const canvas = document.getElementById("scanner-canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      // Use Quagga to decode barcode from image
+      try {
+        Quagga.decodeSingle(
+          {
+            src: e.target.result,
+            numOfWorkers: 0,
+            inputStream: {
+              size: 800,
+            },
+            decoder: {
+              readers: [
+                "code_128_reader",
+                "ean_reader",
+                "ean_8_reader",
+                "upc_reader",
+                "upc_e_reader",
+                "code_39_reader",
+                "code_93_reader",
+                "codabar_reader",
+              ],
+            },
+          },
+          function (result) {
+            if (result && result.codeResult) {
+              const barcode = result.codeResult.code;
+              console.log("[Barcode Upload] Barcode detected:", barcode);
+
+              // Clear errors
+              errorDiv.classList.add("hidden");
+
+              // Show result
+              detectedBarcodeValue = barcode;
+              detectedBarcodeElement.textContent = barcode;
+              resultDiv.classList.remove("hidden");
+              useBarcodeBtn.classList.remove("hidden");
+            } else {
+              console.warn("[Barcode Upload] No barcode found in image");
+              errorText.textContent =
+                "No barcode detected in the image. Try a clearer image.";
+              errorDiv.classList.remove("hidden");
+            }
+          },
+        );
+      } catch (error) {
+        console.error("[Barcode Upload] Decoding error:", error);
+        errorText.textContent = "Error decoding image: " + error.message;
+        errorDiv.classList.remove("hidden");
+      }
+    };
+
+    img.onerror = function () {
+      console.error("[Barcode Upload] Failed to load image");
+      errorText.textContent = "Failed to load image. Please try another file.";
+      errorDiv.classList.remove("hidden");
+    };
+
+    img.src = e.target.result;
+  };
+
+  reader.onerror = function () {
+    console.error("[Barcode Upload] File read error");
+    errorText.textContent = "Error reading file.";
+    errorDiv.classList.remove("hidden");
+  };
+
+  reader.readAsDataURL(file);
+
+  // Reset file input
+  event.target.value = "";
+}
+
+// ========================
+// Product Display Functions
+// ========================
+
+function loadProducts() {
+  console.log("[Products] Loading all products...");
+
+  fetch("../../php/handlers/getAllProductsHandler.php")
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("[Products] Data received:", data);
+
+      if (data.status === "success") {
+        allProducts = data.data || [];
+        console.log("[Products] Total products:", allProducts.length);
+        displayProducts(allProducts);
+      } else {
+        console.error("[Products] Error:", data.message);
+        showProductError("Failed to load products: " + data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("[Products] Fetch error:", error);
+      showProductError("Error loading products: " + error.message);
+    });
+}
+
+function displayProducts(products) {
+  const productTable = document.getElementById("productTable");
+
+  if (!productTable) {
+    console.warn("[Products] productTable element not found");
+    return;
+  }
+
+  // Clear existing rows
+  productTable.innerHTML = "";
+
+  if (!products || products.length === 0) {
+    productTable.innerHTML = `
+      <tr>
+        <td colspan="8" class="py-8 px-4 text-center text-gray-500">
+          No products found. <a href="#" onclick="openProductModal(); return false;" class="text-blue-500 hover:underline">Add one now</a>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  products.forEach((product) => {
+    const row = document.createElement("tr");
+    row.className = "border-b hover:bg-cream";
+    row.innerHTML = `
+      <td class="py-3 px-4 font-medium">P-${String(product.product_id).padStart(3, "0")}</td>
+      <td class="py-3 px-4 font-mono text-sm">${product.barcode}</td>
+      <td class="py-3 px-4 font-mono text-xs text-gray-600">${product.sku || "N/A"}</td>
+      <td class="py-3 px-4">${product.product_name}</td>
+      <td class="py-3 px-4">${product.store_name || "N/A"}</td>
+      <td class="py-3 px-4 text-center">${product.quantity}</td>
+      <td class="py-3 px-4 font-semibold">₱${Number(product.price).toFixed(2)}</td>
+      <td class="py-3 px-4">
+        <div class="flex gap-2 justify-center">
+          <button onclick="openEditProductModal(${product.product_id})" class="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition" title="Edit">
+            <span class="material-icons text-base">edit</span>
+          </button>
+          <button onclick="openDeleteProductModal(${product.product_id})" class="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition" title="Delete">
+            <span class="material-icons text-base">delete_outline</span>
+          </button>
+        </div>
+      </td>
+    `;
+    productTable.appendChild(row);
+  });
+
+  console.log("[Products] Displayed", products.length, "products");
+}
+
+function showProductError(message) {
+  console.error("[Products Error]", message);
+  const productTable = document.getElementById("productTable");
+  if (productTable) {
+    productTable.innerHTML = `
+      <tr>
+        <td colspan="6" class="py-8 px-4 text-center text-red-500">
+          ⚠️ ${message}
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function filterProducts() {
+  const searchInput = document.getElementById("productSearch");
+  const storeFilter = document.getElementById("storeFilter");
+
+  if (!searchInput || !storeFilter) {
+    console.warn("[Products] Filter inputs not found");
+    return;
+  }
+
+  const searchTerm = searchInput.value.toLowerCase().trim();
+  const selectedStore = storeFilter.value.trim();
+
+  console.log(
+    "[Products] Filtering - Search:",
+    searchTerm,
+    "Store:",
+    selectedStore,
+  );
+
+  const filtered = allProducts.filter((product) => {
+    const matchesSearch =
+      !searchTerm ||
+      product.product_name.toLowerCase().includes(searchTerm) ||
+      product.barcode.includes(searchTerm) ||
+      String(product.product_id).includes(searchTerm);
+
+    const matchesStore = !selectedStore || product.store_name === selectedStore;
+
+    return matchesSearch && matchesStore;
+  });
+
+  console.log("[Products] Filtered to", filtered.length, "products");
+  displayProducts(filtered);
+}
+
+// ========================
+// Edit Product Functions
+// ========================
+function openEditProductModal(productId) {
+  console.log("[Edit Product] Opening edit modal for product:", productId);
+
+  const product = allProducts.find((p) => p.product_id == productId);
+  if (!product) {
+    console.error("[Edit Product] Product not found");
+    return;
+  }
+
+  // Populate form with current product data
+  document.getElementById("editProductId").value = productId;
+  document.getElementById("editProductBarcode").value = product.barcode;
+  document.getElementById("editProductName").value = product.product_name;
+  document.getElementById("editProductPrice").value = product.price;
+  document.getElementById("editProductQuantity").value = product.quantity;
+  document.getElementById("editProductError").classList.add("hidden");
+
+  // Fetch and populate stores
+  fetch("../../php/handlers/getAllStoresHandler.php")
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.status === "success") {
+        const storeSelect = document.getElementById("editProductStore");
+        storeSelect.innerHTML = '<option value="">-- Select Store --</option>';
+
+        data.data.forEach((store) => {
+          const option = document.createElement("option");
+          option.value = store.store_id;
+          option.textContent = store.store_name;
+          option.selected = store.store_id == product.store_id;
+          storeSelect.appendChild(option);
+        });
+      }
+    })
+    .catch((error) =>
+      console.error("[Edit Product] Error fetching stores:", error),
+    );
+
+  toggleModal("editProductModal");
+}
+
+function submitEditProduct() {
+  const productId = document.getElementById("editProductId").value;
+  const barcode = document.getElementById("editProductBarcode").value;
+  const productName = document.getElementById("editProductName").value;
+  const price = document.getElementById("editProductPrice").value;
+  const quantity = document.getElementById("editProductQuantity").value;
+  const storeId = document.getElementById("editProductStore").value;
+  const errorDiv = document.getElementById("editProductError");
+  const errorText = document.getElementById("editProductErrorText");
+
+  // Clear previous errors
+  if (errorDiv) {
+    errorDiv.classList.add("hidden");
+  }
+
+  // Validate
+  if (!barcode || !productName || !price || !quantity || !storeId) {
+    if (errorDiv && errorText) {
+      errorText.textContent = "Please fill in all required fields";
+      errorDiv.classList.remove("hidden");
+    }
+    return;
+  }
+
+  console.log("[Edit Product] Updating product:", {
+    productId,
+    barcode,
+    productName,
+    price,
+    quantity,
+    storeId,
+  });
+
+  const formData = new FormData();
+  formData.append("product_id", productId);
+  formData.append("barcode", barcode);
+  formData.append("product_name", productName);
+  formData.append("price", price);
+  formData.append("quantity", quantity);
+  formData.append("store_id", storeId);
+
+  fetch("../../php/handlers/updateProductHandler.php", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("[Edit Product] Update response:", data);
+      if (data.status === "success") {
+        // Show success modal
+        document.getElementById("successHeader").textContent =
+          "Product Updated";
+        document.getElementById("successMessage").textContent =
+          `Product "${productName}" updated successfully`;
+        document.getElementById("successEmail").textContent = data.data.barcode;
+        document.getElementById("successRole").textContent =
+          "Qty: " + quantity + " - ₱" + parseFloat(price).toLocaleString();
+        document.getElementById("successUserId").textContent =
+          "SKU: " + data.data.sku;
+        document
+          .getElementById("successStoreContainer")
+          .classList.add("hidden");
+
+        window.isEditOperation = true;
+
+        toggleModal("editProductModal");
+        toggleModal("successModal");
+
+        // Reload page after modal closes
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      } else {
+        if (errorDiv && errorText) {
+          errorText.textContent = "Error: " + data.message;
+          errorDiv.classList.remove("hidden");
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("[Edit Product] Error:", error);
+      if (errorDiv && errorText) {
+        errorText.textContent = "An error occurred: " + error.message;
+        errorDiv.classList.remove("hidden");
+      }
+    });
+}
+
+// ========================
+// Delete Product Functions
+// ========================
+
+function openDeleteProductModal(productId) {
+  console.log("[Delete Product] Opening delete modal for product:", productId);
+
+  let product = allProducts.find((p) => p.product_id == productId);
+
+  // If product not found in allProducts, fetch it from database
+  if (!product) {
+    console.warn(
+      "[Delete Product] Product not found in allProducts, fetching from database",
+    );
+    fetch(
+      `../../php/handlers/getProductByIdHandler.php?product_id=${productId}`,
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "success") {
+          product = data.data;
+          populateDeleteModal(productId, product.product_name);
+        } else {
+          console.error("[Delete Product] Failed to fetch product");
+          document
+            .getElementById("deleteProductError")
+            .classList.remove("hidden");
+          document.getElementById("deleteProductErrorText").textContent =
+            "Product not found";
+        }
+      })
+      .catch((error) => {
+        console.error("[Delete Product] Fetch error:", error);
+        document
+          .getElementById("deleteProductError")
+          .classList.remove("hidden");
+        document.getElementById("deleteProductErrorText").textContent =
+          "Error fetching product";
+      });
+  } else {
+    populateDeleteModal(productId, product.product_name);
+  }
+}
+
+function populateDeleteModal(productId, productName) {
+  document.getElementById("deleteProductId").value = productId;
+  document.getElementById("deleteProductName").textContent = productName;
+  document.getElementById("deleteProductError").classList.add("hidden");
+
+  toggleModal("deleteProductModal");
+}
+
+function confirmDeleteProduct() {
+  const productId = document.getElementById("deleteProductId").value;
+  const errorDiv = document.getElementById("deleteProductError");
+  const errorText = document.getElementById("deleteProductErrorText");
+
+  // Clear previous errors
+  if (errorDiv) {
+    errorDiv.classList.add("hidden");
+  }
+
+  console.log("[Delete Product] Deleting product:", productId);
+
+  const formData = new FormData();
+  formData.append("product_id", productId);
+
+  fetch("../../php/handlers/deleteProductHandler.php", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("[Delete Product] Delete response:", data);
+      if (data.status === "success") {
+        // Show success modal
+        document.getElementById("successHeader").textContent =
+          "Product Deleted";
+        document.getElementById("successMessage").textContent =
+          "Product has been deleted successfully";
+        document
+          .getElementById("successDetails")
+          .classList.add("hidden");
+
+        // Set flag to reload page when modal is closed
+        shouldReloadPage = true;
+
+        toggleModal("deleteProductModal");
+        toggleModal("successModal");
+      } else {
+        if (errorDiv && errorText) {
+          errorText.textContent = "Error: " + data.message;
+          errorDiv.classList.remove("hidden");
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("[Delete Product] Error:", error);
+      if (errorDiv && errorText) {
+        errorText.textContent = "An error occurred: " + error.message;
+        errorDiv.classList.remove("hidden");
+      }
+    });
+}
+
+// Load products when page is ready
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("[Products] DOM loaded, initializing products...");
+
+  // Check if we're on the products page
+  if (document.getElementById("productTable")) {
+    loadProducts();
   }
 });
