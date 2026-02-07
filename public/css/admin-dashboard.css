@@ -265,3 +265,30 @@
     padding: 0.25rem;
   }
 }
+
+/* Modal Styles */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  transition: none !important;
+  opacity: 1;
+}
+
+.modal-overlay:not(.hidden) {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.modal-overlay.hidden {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.modal-content {
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  transition: none !important;
+}

@@ -1,25 +1,27 @@
 <div
-  id="subscriptionModal"
+  id="editSubscriptionModal"
   class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50"
 >
   <div class="bg-white rounded-xl p-6 w-full max-w-md">
     <h3 class="text-lg font-semibold text-green mb-4">
-      Create New Subscription
+      Edit Subscription
     </h3>
 
     <!-- Error Message -->
-    <div id="subscriptionError" class="hidden bg-redsoft/10 text-redsoft text-sm px-4 py-2 rounded mb-4">
-      <p id="subscriptionErrorText"></p>
+    <div id="editSubscriptionError" class="hidden bg-redsoft/10 text-redsoft text-sm px-4 py-2 rounded mb-4">
+      <p id="editSubscriptionErrorText"></p>
     </div>
 
-    <form id="createSubscriptionForm">
+    <form id="editSubscriptionForm">
+      <input id="editSubscriptionId" type="hidden" />
+
       <!-- Subscription Name -->
       <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-2">
           Subscription Name <span class="text-red-500">*</span>
         </label>
         <input
-          id="subscriptionName"
+          id="editSubscriptionName"
           type="text"
           class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-gold focus:outline-none"
           placeholder="e.g., Basic, Standard, Premium"
@@ -33,7 +35,7 @@
           Duration (months) <span class="text-red-500">*</span>
         </label>
         <input
-          id="subscriptionDuration"
+          id="editSubscriptionDuration"
           type="number"
           class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-gold focus:outline-none"
           placeholder="e.g., 1, 3, 6, 12"
@@ -48,7 +50,7 @@
           Price (PHP) <span class="text-red-500">*</span>
         </label>
         <input
-          id="subscriptionPrice"
+          id="editSubscriptionPrice"
           type="number"
           class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-gold focus:outline-none"
           placeholder="e.g., 499, 1299"
@@ -60,13 +62,13 @@
       <div class="flex justify-end gap-2">
         <button
           type="button"
-          onclick="toggleModal('subscriptionModal'); clearSubscriptionForm();"
+          onclick="toggleModal('editSubscriptionModal')"
           class="px-4 py-2 border rounded hover:bg-gray-50"
         >
           Cancel
         </button>
-        <button type="button" onclick="createSubscription()" class="bg-gold text-white px-4 py-2 rounded hover:bg-gold/90">
-          Create Subscription
+        <button type="button" onclick="submitEditSubscription()" class="bg-gold text-white px-4 py-2 rounded hover:bg-gold/90">
+          Update Subscription
         </button>
       </div>
     </form>
