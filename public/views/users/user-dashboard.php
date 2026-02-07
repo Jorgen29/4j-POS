@@ -23,6 +23,10 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="../../css/admin-dashboard.css">
+    
+    <!-- Quagga Barcode Scanner Library (same as admin) -->
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    
     <script>
       tailwind.config = {
         theme: {
@@ -55,6 +59,9 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
         <button onclick="showPage('sales', this)" class="nav-item">
           POS / Sales
         </button>
+        <button onclick="showPage('help', this)" class="nav-item">
+          Help
+        </button>
       </nav>
     </aside>
 
@@ -71,6 +78,9 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
           </button>
           <button onclick="showPage('sales', this); toggleMobileNav()" class="nav-item w-full">
             POS / Sales
+          </button>
+          <button onclick="showPage('help', this); toggleMobileNav()" class="nav-item w-full">
+            Help
           </button>
         </nav>
       </div>
@@ -129,6 +139,11 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
       <!-- SALES / POS -->
       <div id="sales" class="page hidden">
         <?php include './layouts/sales.php'; ?>
+      </div>
+
+      <!-- HELP -->
+      <div id="help" class="page hidden">
+        <?php include './layouts/help.php'; ?>
       </div>
     </main>
 

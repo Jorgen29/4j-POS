@@ -88,7 +88,7 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg sm:text-xl font-bold text-green">Checkout</h3>
             <button 
-                onclick="document.getElementById('barcodeScannerModalPOS').classList.remove('hidden'); setTimeout(() => document.getElementById('barcodeInputPOS').focus(), 100);"
+                onclick="document.getElementById('barcodeScannerModalPOS').classList.remove('hidden'); setTimeout(() => { startBarcodeScanner(); document.getElementById('barcodeInputPOS').focus(); }, 100);"
                 class="bg-gold text-white p-2 rounded-lg hover:bg-gold/90 transition"
                 title="Scan Barcode"
             >
@@ -341,61 +341,128 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
 
     // Barcode Scanner Functions for POS
     let barcodeStream = null;
+    let quaggaInitialized = false;
 
     function startBarcodeScanner() {
         const video = document.getElementById('barcodeVideoPOS');
         const loading = document.getElementById('barcodeLoadingPOS');
+        const barcodeInput = document.getElementById('barcodeInputPOS');
 
+        // Focus on input for scanning
+        barcodeInput.focus();
+        
+        // Check if camera is already active
+        if (barcodeStream) {
+            video.style.display = 'block';
+            loading.style.display = 'none';
+            return;
+        }
+
+        // Try to start camera
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
             .then(stream => {
                 barcodeStream = stream;
                 video.style.display = 'block';
                 video.srcObject = stream;
                 loading.style.display = 'none';
-                initBarcodeScannerPOS();
+                
+                // Start Quagga scanner
+                initQuaggaScanner();
             })
             .catch(err => {
-                showWarningModal('Camera access denied or unavailable');
                 console.error('Camera error:', err);
+                loading.textContent = 'Camera not available. Type barcode manually.';
+                loading.style.display = 'block';
+                barcodeInput.focus();
             });
     }
 
     function stopBarcodeScanner() {
+        // Stop Quagga first
+        if (quaggaInitialized && window.Quagga) {
+            try {
+                Quagga.stop();
+            } catch (e) {
+                console.log('Quagga already stopped or not initialized');
+            }
+        }
+        
+        // Stop media stream
         if (barcodeStream) {
             barcodeStream.getTracks().forEach(track => track.stop());
             barcodeStream = null;
         }
+        
+        quaggaInitialized = false;
+        const video = document.getElementById('barcodeVideoPOS');
+        const loading = document.getElementById('barcodeLoadingPOS');
+        video.style.display = 'none';
+        video.srcObject = null;
+        loading.style.display = 'block';
+        loading.textContent = 'Loading camera...';
     }
 
-    function initBarcodeScannerPOS() {
+    function initQuaggaScanner() {
         const video = document.getElementById('barcodeVideoPOS');
         const canvas = document.getElementById('barcodeCanvasPOS');
-        const ctx = canvas.getContext('2d');
+        const barcodeInput = document.getElementById('barcodeInputPOS');
 
-        // Focus on input for more reliable scanning
-        document.getElementById('barcodeInputPOS').focus();
+        if (!window.Quagga) {
+            console.warn('Quagga library not loaded, using manual entry only');
+            return;
+        }
 
-        function decode() {
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        quaggaInitialized = true;
 
-                try {
-                    if (window.Quagga) {
-                        // Use Quagga if available
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        // Quagga barcode detection would go here
-                    }
-                } catch (error) {
-                    // Continue scanning
+        // Initialize Quagga for continuous scanning from video
+        Quagga.init({
+            inputStream: {
+                name: 'Live',
+                type: 'LiveStream',
+                target: video,
+                constraints: {
+                    facingMode: 'environment'
+                }
+            },
+            decoder: {
+                readers: [
+                    'code_128_reader',
+                    'ean_reader',
+                    'ean_8_reader',
+                    'upc_reader',
+                    'upc_e_reader',
+                    'code_39_reader',
+                    'code_93_reader',
+                    'codabar_reader'
+                ],
+                debug: {
+                    showCanvas: false,
+                    showPatternInsertion: false,
+                    showFrequency: false,
+                    showErrors: false
                 }
             }
-            if (barcodeStream) {
-                requestAnimationFrame(decode);
+        }, function (err) {
+            if (err) {
+                console.error('Quagga init error:', err);
+                barcodeInput.focus();
+                return;
             }
-        }
-        decode();
+
+            // Start scanning
+            Quagga.start();
+
+            // Handle detected barcode
+            Quagga.onDetected(function (data) {
+                if (data && data.codeResult) {
+                    const barcode = data.codeResult.code;
+                    console.log('Barcode detected:', barcode);
+                    handleBarcodeScanned(barcode);
+                    Quagga.stop();
+                    stopBarcodeScanner();
+                }
+            });
+        });
     }
 
     function handleBarcodeInputPOS() {
@@ -410,22 +477,97 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
     }
 
     function handleBarcodeScanned(barcode) {
-        const product = posProducts.find(p => p.barcode === barcode);
+        // Normalize the barcode input
+        const normalizedBarcode = barcode.trim().toLowerCase();
+        
+        // Try exact match first (case-insensitive and trimmed)
+        let product = posProducts.find(p => 
+            p.barcode && p.barcode.trim().toLowerCase() === normalizedBarcode
+        );
+        
+        // If no exact match, try partial match (in case of extra spaces)
+        if (!product) {
+            product = posProducts.find(p => 
+                p.barcode && p.barcode.toLowerCase().includes(normalizedBarcode)
+            );
+        }
+        
+        // If still no match, try matching by product ID or name
+        if (!product) {
+            product = posProducts.find(p => 
+                String(p.product_id).toLowerCase() === normalizedBarcode ||
+                p.product_name.toLowerCase().includes(normalizedBarcode)
+            );
+        }
 
         if (product) {
             addToCart(product);
-            showWarningModal(`✓ Added: ${product.product_name}`);
+            playBeepSound();
+            // Keep scanner open and ready for next item
+            document.getElementById('barcodeInputPOS').value = '';
+            document.getElementById('barcodeInputPOS').focus();
+            console.log('Product found:', product);
         } else {
-            showWarningModal(`Product not found for barcode: ${barcode}`);
+            console.log('Available products:', posProducts.map(p => ({ 
+                name: p.product_name, 
+                barcode: p.barcode, 
+                id: p.product_id 
+            })));
+            playErrorSound();
+            showWarningModal(`Product not found for: ${barcode}\n\nCheck the barcode in your product list or type the product ID.`);
+            document.getElementById('barcodeInputPOS').focus();
         }
+    }
+
+    function playBeepSound() {
+        // Create a beep sound using Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Beep settings: frequency 800Hz, duration 150ms
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.15);
+    }
+
+    function playErrorSound() {
+        // Create an error sound using Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Error beep settings: lower frequency 400Hz, duration 300ms with two tones
+        oscillator.frequency.value = 400;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
     }
 </script>
 
 <!-- Barcode Scanner Modal for POS -->
-<div id="barcodeScannerModalPOS" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-40">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full max-h-96 flex flex-col">
+<div id="barcodeScannerModalPOS" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-4 sm:p-8 w-full max-w-2xl max-h-96 sm:max-h-[32rem] flex flex-col">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-2xl font-bold text-green">Scan Barcode</h3>
+            <div>
+                <h3 class="text-lg sm:text-2xl font-bold text-green">Scan Barcode</h3>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">Scan barcode or type manually</p>
+            </div>
             <button 
                 onclick="document.getElementById('barcodeScannerModalPOS').classList.add('hidden'); stopBarcodeScanner();"
                 class="text-gray-500 hover:text-gray-700"
@@ -434,30 +576,36 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
             </button>
         </div>
         
-        <div id="barcodeVideoContainerPOS" class="flex-1 bg-black rounded-lg mb-4 flex items-center justify-center">
-            <video id="barcodeVideoPOS" class="w-full h-full object-cover rounded-lg" style="display:none;"></video>
+        <div id="barcodeVideoContainerPOS" class="flex-1 bg-black rounded-lg mb-4 flex items-center justify-center overflow-hidden min-h-32 sm:min-h-64">
+            <video id="barcodeVideoPOS" class="w-full h-full object-cover rounded-lg" autoplay playsinline></video>
             <canvas id="barcodeCanvasPOS" class="hidden"></canvas>
-            <p id="barcodeLoadingPOS" class="text-white text-center">Loading camera...</p>
+            <p id="barcodeLoadingPOS" class="text-white text-center text-sm sm:text-base">Loading camera...</p>
         </div>
         
         <input 
             type="text" 
             id="barcodeInputPOS" 
-            placeholder="Or type barcode here..." 
-            class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold mb-4"
+            placeholder="Scan or type barcode here..." 
+            class="w-full px-3 sm:px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold mb-4 text-sm sm:text-base"
             onkeypress="if(event.key==='Enter') handleBarcodeInputPOS();"
+            autocomplete="off"
         >
+        
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-xs sm:text-sm text-blue-700">
+            <p><strong>💡 Tip:</strong> Focus on the input field and scan your barcode, or type it manually and press Enter.</p>
+            <p class="mt-2 text-xs">You can also type the product ID or name to search.</p>
+        </div>
         
         <div class="flex gap-2">
             <button 
                 onclick="startBarcodeScanner()"
-                class="flex-1 bg-gold text-white py-2 rounded-lg hover:bg-gold/90 transition font-semibold"
+                class="flex-1 bg-gold text-white py-2 rounded-lg hover:bg-gold/90 transition font-semibold text-sm sm:text-base"
             >
                 Start Scanner
             </button>
             <button 
                 onclick="document.getElementById('barcodeScannerModalPOS').classList.add('hidden'); stopBarcodeScanner();"
-                class="flex-1 bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition font-semibold"
+                class="flex-1 bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition font-semibold text-sm sm:text-base"
             >
                 Close
             </button>
