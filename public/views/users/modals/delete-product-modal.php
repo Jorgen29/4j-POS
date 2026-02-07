@@ -44,8 +44,11 @@
     function openDeleteProductModal(productId) {
         deleteProductId = productId;
         
-        // Find product in allUserProducts
-        const product = allUserProducts.find(p => p.product_id == productId);
+        // Find product in userStoreProducts (from products layout)
+        let product = null;
+        if (typeof userStoreProducts !== 'undefined') {
+            product = userStoreProducts.find(p => p.product_id == productId);
+        }
         
         if (product) {
             populateDeleteProductModal(product);

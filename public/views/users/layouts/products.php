@@ -112,8 +112,8 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
 </div>
 
 <script>
-    // Store products data for filtering
-    let allUserProducts = <?php echo json_encode($storeProducts); ?>;
+    // Store products data for filtering - use unique var name to avoid conflicts
+    let userStoreProducts = <?php echo json_encode($storeProducts); ?>;
     window.userStoreId = <?php echo $storeId; ?>;
 
     function filterProducts() {
@@ -121,11 +121,11 @@ if ($products['status'] === 'success' && !empty($products['data'])) {
         const tableBody = document.getElementById('productsTableBody');
         
         if (!searchInput) {
-            displayUserProducts(allUserProducts);
+            displayUserProducts(userStoreProducts);
             return;
         }
 
-        const filtered = allUserProducts.filter(product => 
+        const filtered = userStoreProducts.filter(product => 
             product.product_name.toLowerCase().includes(searchInput) ||
             product.barcode.toLowerCase().includes(searchInput) ||
             product.product_id.toString().includes(searchInput) ||

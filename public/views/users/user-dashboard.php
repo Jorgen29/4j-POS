@@ -52,6 +52,9 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
         <button onclick="showPage('products', this)" class="nav-item">
           Products
         </button>
+        <button onclick="showPage('sales', this)" class="nav-item">
+          POS / Sales
+        </button>
       </nav>
     </aside>
 
@@ -65,6 +68,9 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
           </button>
           <button onclick="showPage('products', this); toggleMobileNav()" class="nav-item w-full">
             Products
+          </button>
+          <button onclick="showPage('sales', this); toggleMobileNav()" class="nav-item w-full">
+            POS / Sales
           </button>
         </nav>
       </div>
@@ -118,6 +124,11 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 0) {
       <!-- PRODUCTS -->
       <div id="products" class="page hidden">
         <?php include './layouts/products.php'; ?>
+      </div>
+
+      <!-- SALES / POS -->
+      <div id="sales" class="page hidden">
+        <?php include './layouts/sales.php'; ?>
       </div>
     </main>
 
